@@ -1,7 +1,7 @@
-"""
+﻿"""
 ╔══════════════════════════════════════════════════════════════════╗
-║      ACTUARIAL RISK SIMULATOR — Assurance Non-Vie               ║
-║      TP Modélisation du Risque | Chapitre 6                     ║
+║      ACTUARIAL RISK SIMULATOR — Non-Life Insurance              ║
+║      Plateforme d'Analyse et de Modélisation du Risque          ║
 ╚══════════════════════════════════════════════════════════════════╝
 """
 
@@ -185,13 +185,14 @@ st.markdown("""
 st.markdown("""
 <div class="app-header">
     <h1>🛡️ Actuarial Risk Simulator</h1>
-    <p>Assurance Non-Vie — Modélisation du Risque | Chapitre 6</p>
+    <p>Plateforme professionnelle de modélisation et d'analyse du risque — Assurance Non-Vie</p>
     <br>
     <span class="badge">VaR</span>
     <span class="badge">TVaR</span>
     <span class="badge">Modèle Collectif</span>
     <span class="badge">Algorithme de Panjer</span>
     <span class="badge">Prime Stop-Loss</span>
+    <span class="badge">Solvabilité II</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -969,7 +970,7 @@ with tabs[4]:
 # TAB 6 — RAPPORT ACTUARIEL
 # ═══════════════════════════════════════════════════════════════
 with tabs[5]:
-    st.markdown('<div class="section-header">📋 Rapport Actuariel Automatique</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📋 Rapport Actuariel Exécutif</div>', unsafe_allow_html=True)
     
     var_ind_95, tvar_ind_95 = compute_var_tvar(individual, 0.95)
     var_col_95, tvar_col_95 = compute_var_tvar(collective, 0.95)
@@ -981,97 +982,94 @@ with tabs[5]:
     skew_val = stats.skew(individual)
     kurt_val = stats.kurtosis(individual)
     
+    import datetime
+    now = datetime.datetime.now().strftime("%d/%m/%Y à %H:%M")
+
     st.markdown(f"""
 ---
 
-# 📑 RAPPORT ACTUARIEL — Modélisation du Risque en Assurance Non-Vie
+# RAPPORT ACTUARIEL EXÉCUTIF
+## Analyse du Risque — Portefeuille Assurance Non-Vie
 
-**Date de génération :** Automatique | **Loi de sévérité :** {dist_type} | **Loi de fréquence :** {freq_dist}
+**Date d'analyse :** {now} &nbsp;|&nbsp; **Loi de sévérité :** {dist_type} &nbsp;|&nbsp; **Loi de fréquence :** {freq_dist}
 
 ---
 
-## 1. Description du Portefeuille
+## 1. Caractéristiques du Portefeuille Analysé
 
 | Paramètre | Valeur |
 |-----------|--------|
-| Nombre de contrats | {n_contracts:,} |
-| Nombre de simulations | {n_simulations:,} |
-| Loi de sévérité | {dist_type} |
-| Loi de fréquence | {freq_dist} (λ = {lambda_freq:.2f}) |
+| Taille du portefeuille | {n_contracts:,} contrats |
+| Nombre de scénarios simulés | {n_simulations:,} |
+| Distribution de la sévérité | {dist_type} |
+| Distribution de la fréquence | {freq_dist} (λ = {lambda_freq:.2f} sinistres/contrat/an) |
+| Niveau de confiance principal | {int(alpha_var*100)}% |
 
 ---
 
-## 2. Statistiques Descriptives
+## 2. Statistiques Descriptives de la Charge Sinistre
 
-| Statistique | Modèle Individuel | Modèle Collectif |
-|------------|-------------------|------------------|
-| Moyenne (€) | {individual.mean():,.2f} | {collective.mean():,.2f} |
+| Indicateur | Modèle Individuel | Modèle Collectif |
+|-----------|-------------------|------------------|
+| Charge moyenne (€) | {individual.mean():,.2f} | {collective.mean():,.2f} |
 | Médiane (€) | {np.median(individual):,.2f} | {np.median(collective):,.2f} |
 | Écart-type (€) | {individual.std():,.2f} | {collective.std():,.2f} |
-| Asymétrie | {skew_val:.4f} | {stats.skew(collective):.4f} |
-| Aplatissement | {kurt_val:.4f} | {stats.kurtosis(collective):.4f} |
-| Max (€) | {individual.max():,.2f} | {collective.max():,.2f} |
+| Coefficient de variation | {individual.std()/max(individual.mean(),1):.4f} | {collective.std()/max(collective.mean(),1):.4f} |
+| Asymétrie (skewness) | {skew_val:.4f} | {stats.skew(collective):.4f} |
+| Excès de kurtosis | {kurt_val:.4f} | {stats.kurtosis(collective):.4f} |
+| Charge maximale observée (€) | {individual.max():,.2f} | {collective.max():,.2f} |
 
-> **Note :** Une asymétrie positive ({skew_val:.2f}) confirme la présence de gros sinistres, 
-> caractéristique des portefeuilles auto en assurance non-vie.
+> Une asymétrie positive ({skew_val:.2f}) confirme la présence de sinistres à forte sévérité,
+> structure typique des portefeuilles automobile en assurance non-vie.
 
 ---
 
-## 3. Mesures de Risque
+## 3. Mesures de Risque Réglementaires
 
 ### 3.1 Value-at-Risk (VaR)
 
-| Niveau | VaR Individuel | VaR Collectif |
-|--------|---------------|---------------|
+| Niveau de confiance | VaR — Sinistre Individuel | VaR — Charge Agrégée |
+|--------------------|--------------------------|----------------------|
 | 90% | {compute_var_tvar(individual, 0.90)[0]:,.0f} € | {compute_var_tvar(collective, 0.90)[0]:,.0f} € |
 | 95% | {var_ind_95:,.0f} € | {var_col_95:,.0f} € |
 | 99% | {var_ind_99:,.0f} € | {var_col_99:,.0f} € |
 
-### 3.2 Tail Value-at-Risk (TVaR)
+### 3.2 Tail Value-at-Risk (TVaR) — Expected Shortfall
 
-| Niveau | TVaR Individuel | TVaR Collectif | Ratio TVaR/VaR (col.) |
-|--------|----------------|----------------|-----------------------|
+| Niveau de confiance | TVaR Individuel | TVaR Agrégée | Ratio TVaR/VaR |
+|--------------------|----------------|--------------|----------------|
 | 90% | {compute_var_tvar(individual, 0.90)[1]:,.0f} € | {compute_var_tvar(collective, 0.90)[1]:,.0f} € | {compute_var_tvar(collective, 0.90)[1]/max(compute_var_tvar(collective, 0.90)[0],1):.3f} |
 | 95% | {tvar_ind_95:,.0f} € | {tvar_col_95:,.0f} € | {tvar_col_95/max(var_col_95,1):.3f} |
 | 99% | {tvar_ind_99:,.0f} € | {tvar_col_99:,.0f} € | {tvar_col_99/max(var_col_99,1):.3f} |
 
-> **Interprétation :** TVaR ≥ VaR toujours vérifiée. Le ratio TVaR/VaR mesure 
-> la sévérité du risque de queue : plus il est élevé, plus les pertes extrêmes sont dangereuses.
+> Le ratio TVaR/VaR mesure l'intensité du risque de queue. Un ratio supérieur à 1,5 
+> indique une distribution à queues lourdes nécessitant une attention particulière en matière de provisionnement.
 
 ---
 
-## 4. Prime Stop-Loss
+## 4. Tarification des Contrats de Réassurance Stop-Loss
 
-| Seuil (d) | Prime Pure | Prime Chargée (+{loading}%) |
-|-----------|-----------|------------------------------|
-| VaR 95% = {var_col_95:,.0f}€ | {sl_d95:,.0f} € | {sl_d95*(1+loading/100):,.0f} € |
-| VaR 99% = {var_col_99:,.0f}€ | {sl_d99:,.0f} € | {sl_d99*(1+loading/100):,.0f} € |
-
----
-
-## 5. Conclusion et Recommandations Actuarielles
-
-✅ **Mesures de risque** : La TVaR est préférable à la VaR pour la gestion prudentielle. 
-Elle satisfait la propriété de sous-additivité et est cohérente au sens de Artzner et al. (1999).
-
-✅ **Modèle collectif** : Recommandé pour les grands portefeuilles. Il capture la variabilité 
-de la fréquence des sinistres via la loi de Poisson.
-
-✅ **Algorithme de Panjer** : Outil computationnellement efficace pour calculer la distribution 
-agrégée. Évite les convolutions multiples coûteuses.
-
-✅ **Réassurance** : Un contrat Stop-Loss avec franchise à VaR 95% ({var_col_95:,.0f}€) 
-protège l'assureur contre les années catastrophiques pour une prime de {sl_d95:,.0f}€.
-
-✅ **Solvabilité II** : Le SCR devrait être calibré à la TVaR 99,5% conformément 
-à la directive européenne.
+| Seuil de rétention (d) | Prime Stop-Loss Pure | Prime Commerciale (+{loading}%) | Transfert de risque |
+|------------------------|---------------------|--------------------------------|---------------------|
+| VaR 95% = {var_col_95:,.0f} € | {sl_d95:,.0f} € | {sl_d95*(1+loading/100):,.0f} € | {(1 - np.minimum(collective, var_col_95).mean() / max(collective.mean(),1))*100:.1f}% |
+| VaR 99% = {var_col_99:,.0f} € | {sl_d99:,.0f} € | {sl_d99*(1+loading/100):,.0f} € | {(1 - np.minimum(collective, var_col_99).mean() / max(collective.mean(),1))*100:.1f}% |
 
 ---
-*Rapport généré par Actuarial Risk Simulator — TP Assurance Non-Vie*
+
+## 5. Recommandations et Conclusions
+
+**Exigences en capital (SCR — Solvabilité II)**
+La directive Solvabilité II impose un calibrage du SCR à la VaR 99,5% de la distribution des pertes sur un horizon d'un an. Sur la base de cette simulation, la charge de risque à retenir pour le calcul du SCR est estimée à **{compute_var_tvar(collective, 0.995)[0]:,.0f} €**.
+
+**Provisionnement prudentiel**
+La TVaR à 99% ({tvar_col_99:,.0f} €) constitue une mesure conservatrice du risque de queue. Son utilisation est recommandée pour le provisionnement des sinistres graves et la constitution de réserves IBNR.
+
+**Politique de réassurance**
+Un programme Stop-Loss avec seuil de rétention à la VaR 95% ({var_col_95:,.0f} €) permet de transférer les événements catastrophiques pour une prime annuelle de {sl_d95*(1+loading/100):,.0f} € (chargement {loading}%). Ce niveau de protection est conforme aux pratiques du marché de la réassurance non-vie.
+
+**Stabilité du modèle collectif**
+La convergence du modèle collectif (loi des grands nombres) est atteinte à partir de {min(n_simulations, 2000):,} simulations, garantissant la fiabilité statistique des estimations présentées dans ce rapport.
+
+---
+*Actuarial Risk Simulator — Plateforme d'Analyse du Risque Non-Vie &nbsp;|&nbsp; {now}*
 """)
-    
-    st.markdown("""
-    <div class="alert-success">
-        💡 <strong>Conseil :</strong> Ce rapport peut être copié directement dans votre rapport de TP 
-        ou exporté. Les valeurs sont recalculées automatiquement à chaque modification des paramètres.
-    </div>""", unsafe_allow_html=True)
